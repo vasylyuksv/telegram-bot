@@ -5,9 +5,11 @@ import helper from "./helper.mjs";
 import kb from "./keyboard-buttons.mjs";
 import keyboardjs from "./keyboard.mjs";
 
-import bot_data from "./bot_data.mjs";
+// import bot_data from "./bot_data.mjs";
 
 const bot = new TeleBot(process.env.TELEGRAM_BOT_TOKEN);
+
+let teachers_html = []
 
 bot.on('/env', (msg) => {
 	return msg.reply.text(process.env.VERCEL_ENV)
@@ -47,18 +49,26 @@ bot.on("text", async (msg) => {
 			});
 
 		case kb.menus.teacher_list:
+			//teachers list
+			teachers_html = teachers_html?.length
+				? teachers_html
+				: await helper.getTeachersHtml()
 
+			const formatted_teachers = teachers_html.reduce((acc, curr) => {
+				if(curr.name) {
+					acc.push([
+						{
+							text: curr.name,
+							callback_data: curr.name
+						}
+					])
+				}
+				return acc
+			}, [])
 
 			return  bot.sendMessage(chatId, 'Розділи меню', {
 				replyMarkup: {
-					inline_keyboard: bot_data.teacher_list.reduce((acc, curr) => {
-						acc.push([
-							{
-								text: curr.name,
-								callback_data: curr.name}
-						])
-						return acc
-					}, []),
+					inline_keyboard: formatted_teachers,
 					resize: true
 				}
 			});
@@ -75,7 +85,6 @@ bot.on("text", async (msg) => {
 
 
 bot.on('/start', async (msg) => {
-
 	let user = await fetchUser(msg.chat)
 
 	let welcome_message = `${msg.from.first_name} ${msg.from.last_name} (${msg.from.username}), раді бачити тебе на кафедрі Комп'ютерних наук, чим можу бути корисним?`
@@ -94,27 +103,47 @@ bot.on('/start', async (msg) => {
 	)
 })
 
-bot.on('callbackQuery', (msg) => {
+bot.on('/clear_teachers', async (msg) => {
+	const chatId = helper.getChatID(msg)
+	const caption = `Кількість вчителів: ${teachers_html?.length}`
+
+	teachers_html = []
+
+	return  bot.sendMessage(chatId, caption, {
+		replyMarkup: {
+			keyboard: keyboardjs.home,
+			resize: false,
+		}
+	});
+
+})
+
+bot.on('callbackQuery', async (msg) => {
 	const chatId = helper.getChatID(msg.message)
-	const teacher_name = (name) => bot_data.teacher_list.find(el => el.name === name)
 
-	switch (msg.data) {
-		case teacher_name(msg.data).name:
-			return bot.sendMessage(
-				chatId,
-				`<strong>${teacher_name(msg.data).name}</strong>\n${teacher_name(msg.data).email}`,
-				{ parseMode: 'html' }
-			)
-		default:
-			return bot.sendMessage(chatId, 'Не знайдено', {
-				replyMarkup: {
-					keyboard: keyboardjs.home,
-					resize: true
-				}
-			});
+	teachers_html = teachers_html?.length
+		? teachers_html
+		: await helper.getTeachersHtml()
+
+	const teacher_name = (name) => teachers_html.find(el => el.name === name)
+
+	if(teacher_name(msg.data)?.name) {
+		const photo = teacher_name(msg.data).photo
+		const caption = `<strong>${teacher_name(msg.data).name}</strong>\n${teacher_name(msg.data).job}`
+
+		if(photo) {
+			return bot.sendPhoto( chatId, photo, { caption: caption, parseMode: 'html' } )
+		} else {
+			return bot.sendMessage( chatId, caption, { parseMode: 'html'} )
+		}
+	} else {
+		return bot.sendMessage(chatId, 'Не знайдено', {
+			replyMarkup: {
+				keyboard: keyboardjs.menus,
+				resize: true
+			},
+		})
 	}
-
-	// return bot.answerCallbackQuery(msg.id, `Inline button callback: ${ msg.data }`, true);
 });
 
 export default bot

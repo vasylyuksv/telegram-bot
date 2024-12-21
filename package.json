@@ -1,6 +1,6 @@
 {
   "name": "telebot-vercel-template",
-  "author": "Vasylyuk Srhii",
+  "author": "Vasylyuk Serhii",
   "license": "MIT",
   "scripts": {
     "dev": "vc dev",
@@ -8,6 +8,8 @@
     "tunnel": "cloudflared tunnel --url http://localhost:3000"
   },
   "dependencies": {
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
     "mongodb": "^6.11.0",
     "telebot": "^1.4.1",
     "telebot-vercel": "^1.0.1"

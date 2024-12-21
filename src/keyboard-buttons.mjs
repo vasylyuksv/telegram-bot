@@ -4,8 +4,8 @@ const kb = {
 		menus: 'Основні розділи',
 	},
 	menus: {
-		teacher_list: 'Cписок викладачів',
-		teacher_contacts: 'Конакти викладачів',
+		teacher_list: 'Науково-педагогічний склад',
+		teacher_contacts: 'Конакти',
 		prefect_contacts: 'Контакти старост',
 	},
 	back: 'Назад',
