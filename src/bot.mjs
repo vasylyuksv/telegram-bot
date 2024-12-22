@@ -185,22 +185,27 @@ bot.on([
 	'/clear_teachers_html',
 	'/clear_teachers',
 	'/clear_students',
+	'/clear_links',
 ], async (msg) => {
 	const chatId = helper.getChatID(msg)
 	let caption = `Кількість `
 
 	switch(msg.text) {
 		case '/clear_teachers_html':
-			teachers_html = []
 			caption += `вчителів: ${teachers_html?.length}`
+			teachers_html = []
 			break;
 		case '/clear_teachers':
-			teachers_list = []
 			caption += `вчителів: ${teachers_list?.length}`
+			teachers_list = []
 			break;
 		case '/clear_students':
-			students_list = []
 			caption += `груп: ${students_list?.length}`
+			students_list = []
+			break;
+		case '/clear_links':
+			caption += `посилань: ${links_list?.length}`
+			links_list = []
 			break;
 		default:
 			return
