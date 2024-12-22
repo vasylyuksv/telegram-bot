@@ -5,7 +5,7 @@ const kb = {
 	},
 	menus: {
 		teacher_list: 'Науково-педагогічний склад',
-		teacher_contacts: 'Конакти',
+		teacher_contacts: 'Контакти',
 		prefect_contacts: 'Контакти старост',
 	},
 	back: 'Назад',

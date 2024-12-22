@@ -40,7 +40,7 @@ bot.on("text", async (msg) => {
 
 					acc.push([
 						{
-							text: curr?.[0] || 'Go to',
+							text: curr?.[0] || 'to go',
 							url: `${curr[1]}`
 						}
 					])
@@ -119,7 +119,7 @@ bot.on("text", async (msg) => {
 			}, [])
 
 
-			return  bot.sendMessage(chatId, `Оберіть наукового співробітника зі списку, щоб переглянути контактні дані: (${formatted_teachers?.length})`, {
+			return  bot.sendMessage(chatId, `Оберіть наукового співробітника зі списку, щоб переглянути контактні дані: (${formatted_teachers_list?.length})`, {
 				replyMarkup: {
 					inline_keyboard: formatted_teachers_list,
 					resize: true
@@ -253,7 +253,7 @@ bot.on('callbackQuery', async (msg) => {
 				if (!teachers_list[idx]?.length) break;
 
 				data = teachers_list[idx]
-				caption = `<strong>${data?.[1]}</strong>\nEmail ${data?.[2]}\nTel: ${data?.[4]}`
+				caption = `<strong>${data?.[1]}</strong>\nПошта: ${data?.[2] || 'відсутня'}\nТелефон: ${data?.[4] || 'відсутній'}`
 
 				await bot.sendMessage(chatId, caption, {parseMode: 'html'});
 				break;
@@ -266,7 +266,7 @@ bot.on('callbackQuery', async (msg) => {
 				if (!students_list[idx]?.length) break;
 
 				data = students_list[idx]
-				caption = `<strong>${data?.[2]} (${data?.[1]})</strong>\nEmail: ${data?.[3]}\nTel: ${data?.[4]}`
+				caption = `<strong>${data?.[2]} (${data?.[1]})</strong>\nПошта: ${data?.[3] || 'відсутня'}\nТелефон: ${data?.[4] || 'відсутній'}`
 
 				await bot.sendMessage(chatId, caption, {parseMode: 'html'});
 				break;
