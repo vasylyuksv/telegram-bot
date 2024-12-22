@@ -10,6 +10,9 @@ import keyboardjs from "./keyboard.mjs";
 const bot = new TeleBot(process.env.TELEGRAM_BOT_TOKEN);
 
 let teachers_html = []
+let teachers_list = []
+let students_list = []
+let links_list = []
 
 bot.on('/env', (msg) => {
 	return msg.reply.text(process.env.VERCEL_ENV)
@@ -27,9 +30,28 @@ bot.on("text", async (msg) => {
 	//check message text
 	switch(msg.text){
 		case kb.home.links:
+			//get links
+			links_list = links_list?.length
+				? links_list
+				: await helper.getSheetData('links')
+
+			const formatted_links_list = links_list?.reduce((acc, curr) => {
+				if(curr?.length && curr?.[1]) {
+
+					acc.push([
+						{
+							text: curr?.[0] || 'Go to',
+							url: `${curr[1]}`
+						}
+					])
+				}
+				return acc
+			}, [])
+
+
 			return bot.sendMessage(chatId, 'Оберіть посилання', {
 				replyMarkup: {
-					inline_keyboard: keyboardjs.links,
+					inline_keyboard: formatted_links_list,
 				}
 			});
 			// break;
@@ -41,12 +63,13 @@ bot.on("text", async (msg) => {
 				}
 			});
 		case kb.back:
-			return  bot.sendMessage(chatId, 'Головне Меню', {
+			await  bot.sendMessage(chatId, 'Головне Меню', {
 				replyMarkup: {
 					keyboard: keyboardjs.home,
 					resize: true
 				}
 			});
+			break;
 
 		case kb.menus.teacher_list:
 			//teachers list
@@ -54,21 +77,77 @@ bot.on("text", async (msg) => {
 				? teachers_html
 				: await helper.getTeachersHtml()
 
-			const formatted_teachers = teachers_html.reduce((acc, curr) => {
+			const formated_teachers = teachers_html?.reduce((acc, curr, idx) => {
 				if(curr.name) {
+					const name = helper.formatName(curr.name)
 					acc.push([
 						{
-							text: curr.name,
-							callback_data: curr.name
+							text: name,
+							callback_data: `cd_html_teacher__${idx}`
 						}
 					])
 				}
 				return acc
 			}, [])
 
-			return  bot.sendMessage(chatId, 'Розділи меню', {
+			await  bot.sendMessage(chatId, `Виберіть наукового співробітника зі списку: (${formated_teachers?.length})`, {
 				replyMarkup: {
-					inline_keyboard: formatted_teachers,
+					inline_keyboard: formated_teachers,
+					resize: true
+				}
+			});
+
+			break;
+		case kb.menus.teacher_contacts:
+			//teachers list
+			teachers_list = teachers_list?.length
+				? teachers_list
+				: await helper.getSheetData()
+
+			const formatted_teachers_list = teachers_list?.reduce((acc, curr, idx) => {
+				if(curr?.length && curr?.[1]) {
+					const name = helper.formatName(curr[1])
+
+					acc.push([
+						{
+							text: `${name}`,
+							callback_data: `cd_teacher__${idx}`
+						}
+					])
+				}
+				return acc
+			}, [])
+
+
+			return  bot.sendMessage(chatId, `Оберіть наукового співробітника зі списку, щоб переглянути контактні дані: (${formatted_teachers?.length})`, {
+				replyMarkup: {
+					inline_keyboard: formatted_teachers_list,
+					resize: true
+				}
+			});
+		case kb.menus.prefect_contacts:
+			//students list
+			students_list = students_list?.length
+				? students_list
+				: await helper.getSheetData('students')
+
+			const formatted_students_list = students_list?.reduce((acc, curr, idx) => {
+				if(curr?.length && curr?.[1]) {
+					const name = helper.formatName(curr[1])
+
+					acc.push([
+						{
+							text: `${name}`,
+							callback_data: `cd_student__${idx}`
+						}
+					])
+				}
+				return acc
+			}, [])
+
+			return  bot.sendMessage(chatId, `Оберіть групу для отримання контактних даних старости:`, {
+				replyMarkup: {
+					inline_keyboard: formatted_students_list,
 					resize: true
 				}
 			});
@@ -81,8 +160,6 @@ bot.on("text", async (msg) => {
 			});
 	}
 })
-
-
 
 bot.on('/start', async (msg) => {
 	let user = await fetchUser(msg.chat)
@@ -103,11 +180,31 @@ bot.on('/start', async (msg) => {
 	)
 })
 
-bot.on('/clear_teachers', async (msg) => {
+//clear variables
+bot.on([
+	'/clear_teachers_html',
+	'/clear_teachers',
+	'/clear_students',
+], async (msg) => {
 	const chatId = helper.getChatID(msg)
-	const caption = `Кількість вчителів: ${teachers_html?.length}`
+	let caption = `Кількість `
 
-	teachers_html = []
+	switch(msg.text) {
+		case '/clear_teachers_html':
+			teachers_html = []
+			caption += `вчителів: ${teachers_html?.length}`
+			break;
+		case '/clear_teachers':
+			teachers_list = []
+			caption += `вчителів: ${teachers_list?.length}`
+			break;
+		case '/clear_students':
+			students_list = []
+			caption += `груп: ${students_list?.length}`
+			break;
+		default:
+			return
+	}
 
 	return  bot.sendMessage(chatId, caption, {
 		replyMarkup: {
@@ -115,34 +212,81 @@ bot.on('/clear_teachers', async (msg) => {
 			resize: false,
 		}
 	});
-
 })
 
 bot.on('callbackQuery', async (msg) => {
 	const chatId = helper.getChatID(msg.message)
 
-	teachers_html = teachers_html?.length
-		? teachers_html
-		: await helper.getTeachersHtml()
+	let photo = ''
+	let idx = msg.data.split('__')[1];
+	let data = ''
+	let caption = ''
 
-	const teacher_name = (name) => teachers_html.find(el => el.name === name)
+	// identify inline button by callback_data
+	try {
+		switch (true) {
+			case msg.data.startsWith('cd_html_teacher__'):
+				teachers_html = teachers_html?.length
+					? teachers_html
+					: await helper.getTeachersHtml()
 
-	if(teacher_name(msg.data)?.name) {
-		const photo = teacher_name(msg.data).photo
-		const caption = `<strong>${teacher_name(msg.data).name}</strong>\n${teacher_name(msg.data).job}`
+				data = teachers_html[idx]
 
-		if(photo) {
-			return bot.sendPhoto( chatId, photo, { caption: caption, parseMode: 'html' } )
-		} else {
-			return bot.sendMessage( chatId, caption, { parseMode: 'html'} )
+				if (!data?.name) break;
+
+				photo = data?.photo
+				caption = `<strong>${data.name}</strong>\n${data.job}`
+
+				if (photo) {
+					await bot.sendPhoto(chatId, photo, {caption: caption, parseMode: 'html'})
+				} else {
+					await bot.sendMessage(chatId, caption, {parseMode: 'html'})
+				}
+				break;
+
+			case msg.data.startsWith('cd_teacher__'):
+
+				teachers_list = teachers_list?.length
+					? teachers_list
+					: await helper.getSheetData()
+
+				if (!teachers_list[idx]?.length) break;
+
+				data = teachers_list[idx]
+				caption = `<strong>${data?.[1]}</strong>\nEmail ${data?.[2]}\nTel: ${data?.[4]}`
+
+				await bot.sendMessage(chatId, caption, {parseMode: 'html'});
+				break;
+
+			case msg.data.startsWith('cd_student__'):
+				students_list = students_list?.length
+					? students_list
+					: await helper.getSheetData('students')
+
+				if (!students_list[idx]?.length) break;
+
+				data = students_list[idx]
+				caption = `<strong>${data?.[2]} (${data?.[1]})</strong>\nEmail: ${data?.[3]}\nTel: ${data?.[4]}`
+
+				await bot.sendMessage(chatId, caption, {parseMode: 'html'});
+				break;
+
+			default:
+				await bot.sendMessage(chatId, 'Не знайдено', {
+					replyMarkup: {
+						keyboard: keyboardjs.menus,
+						resize: true
+					},
+				});
 		}
-	} else {
-		return bot.sendMessage(chatId, 'Не знайдено', {
+	} catch (error) {
+		console.error('Error in callbackQuery:', error);
+		await bot.sendMessage(chatId, 'Не знайдено', {
 			replyMarkup: {
 				keyboard: keyboardjs.menus,
 				resize: true
 			},
-		})
+		});
 	}
 });
 

@@ -16,7 +16,10 @@ npm i -g vercel
 
 [Download link](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/)
 
-#### 3. Then run local dev server with tunnel
+#### 3. Then run local dev server with tunnel, vercel should be started
+```bash
+vercel
+```
 
 ```bash
 npm run dev-with-tunnel
