@@ -22,7 +22,8 @@ bot.on("text", async (msg) => {
 	if (msg.text.startsWith('/')) return;
 
 	//save user
-	await updateUserOnMessage(msg)
+	//TODO: data from DB
+	// await updateUserOnMessage(msg)
 
 	//get chat id
 	const chatId = helper.getChatID(msg)
@@ -162,10 +163,12 @@ bot.on("text", async (msg) => {
 })
 
 bot.on('/start', async (msg) => {
-	let user = await fetchUser(msg.chat)
+	//TODO: data from DB
+	// let user = await fetchUser(msg.chat)
 
 	let welcome_message = `${msg.from.first_name} ${msg.from.last_name} (${msg.from.username}), раді бачити тебе на кафедрі Комп'ютерних наук, чим можу бути корисним?`
-	if(user.count > 1) welcome_message = `Раді бачити тебе знову на кафедрі Комп'ютерних наук, чим можу бути корисним?`
+	//TODO: data from DB
+	// if(user.count > 1) welcome_message = `Раді бачити тебе знову на кафедрі Комп'ютерних наук, чим можу бути корисним?`
 
 	return msg.reply.photo(
 		'https://duikt.edu.ua/img/logo_new.png',
@@ -296,6 +299,7 @@ bot.on('callbackQuery', async (msg) => {
 });
 
 export default bot
+
 
 const users = mongo.db('DUIKTCS').collection('Users')
 
